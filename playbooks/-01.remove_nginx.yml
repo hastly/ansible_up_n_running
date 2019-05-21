@@ -1,0 +1,16 @@
+#!/usr/bin/env ansible-playbook
+
+---
+
+- hosts: testserver
+  become: true
+  tasks:
+    - name: stop nginx
+      service:
+        name: nginx
+        state: stopped
+    - name: ensure nginx is not installed
+      apt: name=nginx state=absent
+    - name: remove leftovers
+      apt: autoremove=true purge=true
+
