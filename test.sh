@@ -1,0 +1,2 @@
+ansible testserver -m ping
+
