@@ -6,3 +6,5 @@ Forwarding Vagrant ports:
 80 => 18080
 443 => 14443
 
+run ./check.sh to check procedure
+
