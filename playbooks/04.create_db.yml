@@ -1,0 +1,71 @@
+#!/usr/bin/env ansible-playbook
+
+---
+
+- hosts: localhost
+  gather_facts: false
+
+  vars:
+      GITLAB_KEY_PATH: "{{ lookup('env','IPL_DEV_DEPLOY_KEY') or '~/.ssh/id_rsa' }}"
+
+  tasks:
+    - name: Encrypt key
+      shell: |
+        ansible-vault --vault-password-file=../pass encrypt {{GITLAB_KEY_PATH}} --output {{GITLAB_KEY_PATH}}_en
+      register: hello
+    - debug: msg="{{ hello.stdout }}"
+    - debug: msg="{{ hello.stderr }}"
+
+
+- hosts: testserver
+  gather_facts: false
+
+  vars:
+      GITLAB_KEY_PATH_DEST: /home/vagrant/.ssh/ip_gitlab_pk
+      GITLAB_KEY_PATH: "{{ lookup('env','IPL_DEV_DEPLOY_KEY') or '~/.ssh/id_rsa' }}"
+      GITLAB_URL: gitlab.app.ipl
+
+  tasks:
+    - name: create api db
+      postgresql_db:
+        name: api
+        login_host: 127.0.0.1
+        login_password: qweasdzxc
+    - name: Ensure .ssh
+      file:
+        dest: "{{ GITLAB_KEY_PATH_DEST | dirname }}"
+        mode: 0700
+        owner: vagrant
+        state: directory
+    - name: Provide with git config
+      template:
+        src: "../templates/config.ssh.j2"
+        dest: "/home/vagrant/.ssh/config"
+        mode: 0600
+        owner: vagrant
+    - name: Provide with gitlab key
+      copy:
+        src: "{{GITLAB_KEY_PATH}}_en"
+        dest: "{{ GITLAB_KEY_PATH_DEST }}"
+        mode: 0600
+        owner: vagrant
+    - name: Clone api db migrations
+      git:
+        repo: git@gitlab.app.ipl:db/api.git
+        dest: /home/vagrant/migrations/api
+        clone: yes
+        accept_hostkey: yes
+    - name: Apply migrations
+      shell: |
+        ipmt up
+      args:
+        chdir: /home/vagrant/migrations/api
+      environment:
+        IPMT_DSN: postgres:qweasdzxc@localhost:5432/api
+    - name: Apply fixtures
+      shell: |
+        pg_restore -h localhost -U postgres -d api /vagrant/files/fixtures_api.dump 
+      environment:
+        PGPASSWORD: qweasdzxc
+
+

@@ -1,0 +1,85 @@
+Development deployment
+
+ ≡ Links:
+   ≡ Buildah/Podman https://github.com/containers/buildah used by Bender
+   ≡ Bender https://github.com/ansible-community/ansible-bender
+   ≡ https://opensource.com/article/17/6/ansible-postgresql-operations
+   ≡ https://nathanleclaire.com/blog/2015/11/10/using-ansible-with-docker-machine-to-bootstrap-host-nodes/
+   ≡ https://ruleoftech.com/2017/dockerizing-all-the-things-running-ansible-inside-docker-container
+
+
+ ≡ Components (containers): 
+
+   ≡ "control" Control - Ansible:2.7.9 container to rule them all (base: alpine:edge)
+
+   ≡ Containerized side services (RDBMS etc.):
+     ≡ "storage" RDBMS - Postgresql:9.5.9 with persistent data p:5432
+     ≡ "queue" AMQP - RabbitMQ:3.7.14 p:5672/15672
+     ≡ "vault" Sensitive Data Storage - Hashicorp Vault:1.1.2 with persistent data p:8200
+     ≡ "monitor" Monitoring - statsd, influxdb, grafana with persistent data p:8125
+     ≡ "monitor-storage" Monitoring Storage - ElasticSearch:7.0.1 p:9200/9300
+     ≡ "monitor-ui" Monitoring UI - Kibana:7.0.1 p:5601
+     ≡ "monitor-tracer" Tracer - jaegertracing:1.12.0 p:9411/16686
+     ≡ ??? "configuration_store"
+
+   ≡ Application containers
+     ≡ "paycard" paycard php p:7001
+     ≡ "pcidss" pcidss php p:7002
+     ≡ "abonent" abonent py p:8765
+     ≡ "bs" business service py p:8764
+     ≡ "iphlr" iphlr py p:8101
+     ≡ "tax" tax py p:8095
+     ≡ "tm" task manager py p:8098
+     ≡ "api" api py p:8888/8889
+     ≡ "widget" widdocdget py p:10000
+     ≡ "cardstore" card_storage py p:8099
+     ≡ "mocker" mocker py p:8093
+     ≡ "reflector" callback dummy py p:20000
+
+   ≡ Containers total:
+     ≡ Control - 1
+     ≡ Side Services - 7
+     ≡ Application (incl. dummies) - 12
+
+   ≡ Sources (public from dockerhub/github and own from private repositories):
+     ≡ control - custom image + private repo 
+     ≡ side services - custom images 
+     ≡ application - private git repo
+     ≡ data
+     ≡ configuration
+
+
+   ≡ Implementation tasks:
+     ≡ Containerized Ansible with hello world deployment in single controlled container
+     ≡ Empty RDBMS upped by playbook
+     ≡ RDBMS Migrations
+     ≡ RDBMS Fixtures
+     ≡ RDBMS Tests
+     tbc...
+
+
+
+   ≡ Fixtures
+     ≡ (api.card_types)
+     ≡ (api.limits_widget)
+     ≡ api.admin_accounts
+     ≡ api.ext_storages
+     ≡ api.free_requisites
+     ≡ api.limits_global
+     ≡ api.oper
+     ≡ api.oper_to_goods
+     ≡ api.pay_params
+     ≡ api.templates
+     ≡ api.templates_oper
+     ≡ api.widgets
+     ≡ api.widgets_ext_settigns
+     ≡ demo.card.oper
+     ≡ demo.card.oper2goods
+     ≡ mocker.hexml_cases
+     ≡ mocker.ipt_cards
+     ≡ mocker.ipt_terminals
+     ≡ mocker.mastercard_keys
+     ≡ mocker.mastercard_transactions
+     ≡ mocker.mastercard_users
+     ≡ mocker.mc_cases
+     ≡ mocker.mc_oper2goods

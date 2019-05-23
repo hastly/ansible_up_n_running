@@ -1,0 +1,106 @@
+ ≡ Prerequesites:
+    ≡ git
+    ≡ virtual box
+    ≡ vagrant
+    ≡ private key to gitlab repos
+ ≡ Clone repo (src) with Vagrantfile and playbooks
+ ≡ Start up Vagrantfile
+ 
+ ≡ Internals:
+   ≡ Single guest ubuntu xenial instance (box) is provisioned with all used ports forwarded
+   ≡ Ensure presence of python package management (python3-pip)
+   ≡ Ansible-2.8 installed in the box via pip
+   ≡ Box is configured via ansible playbooks from src via shared folders
+     ≡ ensure docker package (docker.io) via apt to run application and service containers
+     ≡ ensure docker python package (docker) via pip to configure containers with ansible
+     ≡ ensure pg adtrasksapter (psycopg2) via to manage RDBMS with ansible
+     ≡ ensure parsers (bison, flex) pg development packages (libpq5, libpq-dev, postgresql-server-dev-9.5) via apt and extension repo (https://github.com/postgrespro/jsquery.git) via git clone to make js-query pg extension
+     ≡ build js-query
+     ≡ ensure ipmt via pip
+   ≡ Ansible in the box controls dockerized PG
+     ≡ deploy RDBMS accessible via forwarded ports with default user
+     ≡ copy and apply js-query extension
+     ≡ creates databases
+     ≡ clone migrations
+     ≡ with ipmt apply migrations for every DB
+     ≡ restore fixtures from source for every DB
+   ≡ Ansible in the box controls dockerized APP
+     ≡ starts python container
+     ≡ clone git repo
+     ≡ create config from templates
+     ≡ create log folder
+     ≡ starts application
+
+  ≡ ENV:
+    ≡ pg version (9.5|10|11)
+    ≡ pg login user/password
+    ≡ git user/password
+    ≡ app list
+
+  ≡ AUX methods accesible via ansible playbooks:
+    ≡ update all/selected applications to last/specified commit applying db migrations
+    ≡ stop selected application
+    ≡ restart application from updated list
+    ≡ drop fixtures
+    ≡ drop deployment
+
+export IPMT_DSN='postgres:qweasdzxc@localhost:5432/api'
+sudo apt-get install postgresql-client-9.5
+pg_restore -h localhost -U postgres -d api /vagrant/files/fixtures_api.dump 
+
+
+$ git clone https://github.com/postgrespro/jsquery.git && cd jsquery
+$ make USE_PGXS=1
+$ sudo make USE_PGXS=1 install
+
+docker cp =>
+/usr/lib/postgresql/9.5/lib/jsquery.so => /usr/local/lib/postgresql/
+/usr/include/postgresql/9.5/server/jsquery.h => /usr/local/include/postgresql/server/
+/usr/share/postgresql/9.5/extension/jsquery* => /usr/local/share/postgresql/extension/
+
+ansible postgresql 
+"CREATE EXTENSION jsquery;"
+
+
+migrations by db (db => repo):
+  ≡ (api) git@gitlab.app.ipl:db/api.git
+  ≡ (business) git@gitlab.app.ipl:db/business_service.git
+  ≡ (demo.card) git@gitlab.app.ipl:db/paycard.git
+  ≡ (iphlr) git@gitlab.app.ipl:db/iphlr.git
+  ≡ (logger) git@gitlab.app.ipl:db/logger.git
+  ≡ (mocker) git@gitlab.app.ipl:db/mocker.git
+             git@gitlab.app.ipl:db/mocker3.git
+  ≡ (scp) git@gitlab.app.ipl:db/scp.git
+  ≡ (task_manager) git@gitlab.app.ipl:db/task_manager.git
+  ≡ (tax2) git@gitlab.app.ipl:db/tax2.git
+
+  ≡ !(card_storage) git@gitlab.app.ipl:db/card_storage.git !!empty!!
+  ≡ (payments)
+  ≡ (pcab)
+
+  ≡ (fund_transfer)
+  ≡ (transfer) git@gitlab.app.ipl:db/transfer.git
+
+  ≡ - (fin)
+  ≡ - (mfo)
+  ≡ - (nomor) 
+  ≡ - (offline_registry)
+  ≡ - (projectx)
+  ≡ - (ptp)
+  ≡ - (smslme)
+  ≡ - (spider)
+
+migrations by app (app => db):
+  ≡ api => api, payments, business
+  ≡ bs => business
+  ≡ paycard => demo.card, payments
+  ≡ iphlr => iphlr
+  ≡ logger => logger
+  ≡ test_system => api, fund_trunsfer
+  ≡ pcidss => api, pcab, payments, sms
+  ≡ abonent => scp, payments
+  ≡ tax => tax2
+  ≡ tm => task_manager
+  ≡ widget => business, paymetns, api
+  ≡ card_storage => card_storage
+  ≡ mocker => mocker, pcab

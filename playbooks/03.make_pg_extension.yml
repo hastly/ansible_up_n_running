@@ -1,0 +1,51 @@
+#!/usr/bin/env ansible-playbook
+
+---
+
+- hosts: testserver
+  become: true
+  tasks:
+    - name: install parsers and pg libs
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:
+        - bison
+        - flex
+        - libpq5
+        - libpq-dev
+        - postgresql-server-dev-9.5
+        - postgresql-client-9.5
+    - name: fetch jsquery
+      git:
+        repo: https://github.com/postgrespro/jsquery.git
+        dest: /home/vagrant/jsquery
+        clone: true
+    - name: build jsquery
+      make:
+        chdir: /home/vagrant/jsquery
+        params:
+          USE_PGXS: 1
+    - name: install jsquery locally
+      make:
+        chdir: /home/vagrant/jsquery
+        target: install
+        params:
+          USE_PGXS: 1
+    - name: copy jsquery into pg docker A
+      shell: docker cp /usr/lib/postgresql/9.5/lib/jsquery.so database:/usr/local/lib/postgresql
+    - name: copy jsquery into pg docker B
+      shell: docker cp /usr/include/postgresql/9.5/server/jsquery.h database:/usr/local/include/postgresql/server
+    - name: copy jsquery into pg docker C
+      shell: docker cp /usr/share/postgresql/9.5/extension/jsquery--1.0--1.1.sql database:/usr/local/share/postgresql/extension
+    - name: copy jsquery into pg docker D
+      shell: docker cp /usr/share/postgresql/9.5/extension/jsquery--1.1.sql database:/usr/local/share/postgresql/extension
+    - name: copy jsquery into pg docker E
+      shell: docker cp /usr/share/postgresql/9.5/extension/jsquery.control database:/usr/local/share/postgresql/extension
+    - name: install jsquery extention in pg
+      postgresql_query:
+        login_host: 127.0.0.1
+        login_password: qweasdzxc
+        db: postgres
+        query: CREATE EXTENSION IF NOT EXISTS jsquery;
+

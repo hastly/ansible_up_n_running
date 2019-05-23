@@ -1,0 +1,26 @@
+#!/usr/bin/env ansible-playbook
+
+---
+
+- hosts: testserver
+  become: true
+  tasks:
+    - name: install docker and pip
+      apt:
+        name: "{{ packages }}"
+        update_cache: yes
+      vars:
+        packages:
+        - docker.io
+        - python3-pip
+    - name: install docker py package
+      pip:
+        name: "{{ packages }}"
+        state: forcereinstall
+      vars:
+        packages:
+        - docker
+        - psycopg2-binary
+        - ipmt
+
+

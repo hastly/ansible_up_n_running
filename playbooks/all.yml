@@ -1,0 +1,9 @@
+---
+
+- hosts: all
+  gather_facts: false
+
+- import_playbook: 00.vagrant.yml
+- import_playbook: 02.pg_in_docker.yml
+- import_playbook: 03.make_pg_extension.yml
+- import_playbook: 04.create_db.yml
